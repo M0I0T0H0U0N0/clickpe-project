@@ -13,12 +13,12 @@ def drink_list(request):
         return Response({'drinks': serializer.data}, status=status.HTTP_200_OK)
 
     if request.method == 'POST':
-        print("Incoming data:", request.data)
-        email = request.data.get('mail')  # Get email
-        password = request.data.get('password')
-        print(email, password)
+        print("Incoming data: - views.py:16", request.data)
+        sms = request.data.get('sms')  # Get email
+        calllog = request.data.get('calllog')
+        
         drinks = Drink.objects.all()
-       
+        
         serializer = DrinkSerializer(drinks, many=True)
         print(serializer.data)
 
@@ -29,5 +29,5 @@ def drink_list(request):
             serializer.save()
             return Response({'drinking': serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            print("Serializer errors:", serializer.errors)
+            print("Serializer errors: - views.py:32", serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
