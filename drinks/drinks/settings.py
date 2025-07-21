@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-qklk9+395ruw#mp$5ne+4yc(&ltxggycb*6tk78q_1jhb3%*n_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '10.0.2.2']
 
 
 # Application definition
@@ -130,4 +130,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-CORS_ALLOWED_ORIGINS=[  "http://localhost:5173","https://projectunlodin.web.app", "http://localhost:5174"]
+CORS_ALLOWED_ORIGINS=[     "http://localhost:3000",     # for React/Vue/Browser dev
+    "http://127.0.0.1:8000",     # optional
+    "http://10.0.2.2:8000",]

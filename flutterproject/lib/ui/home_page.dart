@@ -24,11 +24,12 @@ class _HomePageState extends State<HomePage> {
   final loader = PermissionsAndDataLoader();
 
   bool lastPermissionGranted = false;
+  bool hasLoadedOnce = false; // NEW FLAG
 
   @override
   void initState() {
     super.initState();
-    _handleEverythingMode(); // default view
+    _handleEverythingMode(); // Initial load on app start
   }
 
   Future<void> _handleEverythingMode() async {
@@ -41,10 +42,10 @@ class _HomePageState extends State<HomePage> {
 
       // Feed to SDK
       for (var sms in smsList) {
-        sdk.trackSms(sms);
+        await sdk.trackSms(sms);
       }
       for (var call in callLogList) {
-        sdk.trackCall(call);
+        await sdk.trackCall(call);
       }
 
       setState(() {
@@ -53,11 +54,11 @@ class _HomePageState extends State<HomePage> {
         displayedCallLogs = callLogList;
         transactionalSmsList = sdk.transactionalSmsList;
         bufferedEvents = sdk.bufferedData;
+        hasLoadedOnce = true; // ✅ SET THE FLAG
       });
     } else {
       setState(() {
         lastPermissionGranted = false;
-        // Keep previous data (if any)
         transactionalSmsList = sdk.transactionalSmsList;
         bufferedEvents = sdk.bufferedData;
       });
@@ -76,14 +77,20 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _viewMode = ViewMode.everything;
     });
-    _handleEverythingMode();
+
+    // ✅ Only reload if not loaded before
+    if (!hasLoadedOnce) {
+      _handleEverythingMode();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: const Text('SMS & Call Logs'),
+        backgroundColor: Colors.deepPurple,
         actions: [
           TextButton(
             onPressed: _switchToEverything,
@@ -93,6 +100,9 @@ class _HomePageState extends State<HomePage> {
                 color: _viewMode == ViewMode.everything
                     ? Colors.white
                     : Colors.white70,
+                fontWeight:
+                    _viewMode == ViewMode.everything ? FontWeight.bold : null,
+                fontSize: 16,
               ),
             ),
           ),
@@ -104,9 +114,13 @@ class _HomePageState extends State<HomePage> {
                 color: _viewMode == ViewMode.important
                     ? Colors.white
                     : Colors.white70,
+                fontWeight:
+                    _viewMode == ViewMode.important ? FontWeight.bold : null,
+                fontSize: 16,
               ),
             ),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: _viewMode == ViewMode.everything
@@ -121,67 +135,107 @@ class _HomePageState extends State<HomePage> {
         child: Text(
           'Permissions denied.\nNo previously loaded data found.',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16),
+          style: TextStyle(fontSize: 18, color: Colors.black54),
         ),
       );
     }
 
     return ListView(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        const Text(
-          '📩 SMS Messages',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        ...displayedSmsList.map((sms) => ListTile(
-              leading: const Icon(Icons.sms),
-              title: Text(sms['body'] ?? ''),
-              subtitle: Text('From: ${sms['address'] ?? ''}'),
+        _sectionTitle('📩 SMS Messages'),
+        ...displayedSmsList.map((sms) => _cardListTile(
+              icon: Icons.sms,
+              title: sms['body'] ?? '',
+              subtitle: 'From: ${sms['address'] ?? ''}',
+              color: Colors.blue[50],
             )),
-        const Divider(),
-        const Text(
-          '📞 Call Logs',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        ...displayedCallLogs.map((call) => ListTile(
-              leading: const Icon(Icons.call),
-              title: Text(call['name'] ?? 'Unknown'),
-              subtitle: Text('Number: ${call['number'] ?? ''}'),
+        const SizedBox(height: 12),
+        Divider(color: Colors.deepPurple.shade100, thickness: 1.2),
+        const SizedBox(height: 12),
+        _sectionTitle('📞 Call Logs'),
+        ...displayedCallLogs.map((call) => _cardListTile(
+              icon: Icons.call,
+              title: call['name'] ?? 'Unknown',
+              subtitle: 'Number: ${call['number'] ?? ''}',
+              color: Colors.green[50],
             )),
+        const SizedBox(height: 24),
       ],
     );
   }
 
   Widget _buildImportantView() {
     return ListView(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
-        const Text(
-          '🔒 Transactional SMS',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        ...transactionalSmsList.map((sms) => ListTile(
-              leading: const Icon(Icons.lock),
-              title: Text(sms['body'] ?? ''),
-              subtitle: Text('From: ${sms['address'] ?? ''}'),
+        _sectionTitle('🔒 Transactional SMS'),
+        ...transactionalSmsList.map((sms) => _cardListTile(
+              icon: Icons.lock,
+              title: sms['body'] ?? '',
+              subtitle: 'From: ${sms['address'] ?? ''}',
+              color: Colors.orange[50],
             )),
-        const Divider(),
-        const Text(
-          '📦 Buffered Events (Non-Transactional SMS + Call Logs)',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        ...bufferedEvents.map((event) => ListTile(
-              leading: Icon(event.type == 'sms'
+        const SizedBox(height: 12),
+        Divider(color: Colors.deepPurple.shade100, thickness: 1.2),
+        const SizedBox(height: 12),
+        _sectionTitle('📦 Buffered Events (Non-Transactional SMS + Call Logs)'),
+        ...bufferedEvents.map((event) => _cardListTile(
+              icon: event.type == 'sms'
                   ? Icons.sms_outlined
-                  : Icons.call_outlined),
-              title: Text(event.payload['body'] ??
+                  : Icons.call_outlined,
+              title: event.payload['body'] ??
                   event.payload['name'] ??
-                  'Unknown'),
-              subtitle: Text(event.payload['address'] ??
+                  'Unknown',
+              subtitle: event.payload['address'] ??
                   event.payload['number'] ??
-                  ''),
+                  '',
+              color: Colors.purple[50],
             )),
+        const SizedBox(height: 24),
       ],
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.deepPurple.shade700,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+
+  Widget _cardListTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? color,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: color ?? Colors.white,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: ListTile(
+        leading: Icon(icon, color: Colors.deepPurple),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 14, color: Colors.black87),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
     );
   }
 }

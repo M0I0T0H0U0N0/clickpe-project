@@ -38,6 +38,10 @@ dependencies:
   permission_handler: ^11.3.0
   telephony: ^0.1.4
   call_log: ^4.0.0
+  intl: ^0.18.0
+  http: ^0.13.6
+  shared_preferences: ^2.0.18
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

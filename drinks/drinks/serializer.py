@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from .models import Drink
+from .models import Event
 
-
-class DrinkSerializer(serializers.ModelSerializer):
+class EventSerializer(serializers.ModelSerializer):
     class Meta:
-        model=Drink
-        fields=['id','sms','calllogs']
-
+        model = Event
+        fields = ['id', 'event_type', 'payload', 'timestamp']

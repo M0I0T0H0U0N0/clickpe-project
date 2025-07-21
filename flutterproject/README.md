@@ -1,7 +1,7 @@
 # flutterproject
 C:\Users\mithun\AppData\Local\Android\Sdk\platform-tools\adb shell content insert --uri content://call_log/calls --bind number:s:'1234567890' --bind type:i:2 --bind duration:i:60 --bind date:l:1721480000000
 
-A new Flutter project. 
+
 
 ## Getting Started
 

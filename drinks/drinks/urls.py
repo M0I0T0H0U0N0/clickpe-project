@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from .views import drink_list 
+from .views import event_list 
 
 from django.conf.urls.static import static
 from django.conf import settings
@@ -24,7 +24,7 @@ from django.conf import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('drinks/',drink_list),
+    path('drinks/',event_list),
    
  
     

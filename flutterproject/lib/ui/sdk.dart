@@ -1,5 +1,6 @@
-/// SDK: Collects SMS and Call Logs, detects transactional SMS,
-/// and buffers non-transactional data.
+// lib/sdk.dart
+import 'dart:convert';
+import 'connection.dart';
 
 class DataEvent {
   final String type; // 'sms' or 'call'
@@ -9,8 +10,8 @@ class DataEvent {
 
   Map<String, dynamic> toJson() {
     return {
-      'type': type,
-      'payload': payload,
+      'event_type': type,
+      'payload': jsonEncode(payload),
     };
   }
 }
@@ -32,38 +33,49 @@ class DataCollectionSDK {
     'payment',
   ];
 
-  /// Clears any previous data and initializes the SDK
   void initialize() {
     _buffer.clear();
     _transactionalSmsList.clear();
     print('[SDK] Initialized. Buffer cleared.');
   }
 
-  /// Detects if the SMS is transactional and stores appropriately
-  void trackSms(Map<String, String> sms) {
+  // Now async to await sending data
+  Future<void> trackSms(Map<String, String> sms) async {
     final body = sms['body']?.toLowerCase() ?? '';
 
     if (_isTransactional(body)) {
       print('[SDK] Transactional SMS detected: "${sms['body']}"');
       _transactionalSmsList.add(sms);
+
+      final event = {
+        'event_type': 'sms',
+        'payload': jsonEncode(sms),
+      };
+
+      final success = await sendSingleEvent(event);
+      if (!success) {
+        print('[SDK] Failed to send transactional SMS immediately.');
+      }
     } else {
       print('[SDK] Non-transactional SMS buffered');
-      _addToBuffer(DataEvent(type: 'sms', payload: sms));
+      _addToBuffer(DataEvent(type: 'sms', payload: Map<String, dynamic>.from(sms)));
+      if (_buffer.length >= _batchSize) {
+        await _flushBuffer();
+      }
     }
   }
 
-  /// Buffers all call logs
-  void trackCall(Map<String, String> call) {
+  Future<void> trackCall(Map<String, String> call) async {
     print('[SDK] Call log buffered');
-    _addToBuffer(DataEvent(type: 'call', payload: call));
+    _addToBuffer(DataEvent(type: 'call', payload: Map<String, dynamic>.from(call)));
+    if (_buffer.length >= _batchSize) {
+      await _flushBuffer();
+    }
   }
 
-  /// Returns the buffered non-transactional events (call logs + sms)
   List<DataEvent> get bufferedData => List.unmodifiable(_buffer);
 
-  /// Returns the list of transactional SMS
-  List<Map<String, String>> get transactionalSmsList =>
-      List.unmodifiable(_transactionalSmsList);
+  List<Map<String, String>> get transactionalSmsList => List.unmodifiable(_transactionalSmsList);
 
   void _addToBuffer(DataEvent event) {
     _buffer.add(event);
@@ -72,5 +84,19 @@ class DataCollectionSDK {
 
   bool _isTransactional(String body) {
     return _transactionalKeywords.any((keyword) => body.contains(keyword));
+  }
+
+  Future<void> _flushBuffer() async {
+    if (_buffer.isEmpty) return;
+
+    final batch = _buffer.map((event) => event.toJson()).toList();
+
+    final success = await sendEventsBatch(batch);
+    if (success) {
+      print('[SDK] Buffer flushed successfully. Clearing buffer.');
+      _buffer.clear();
+    } else {
+      print('[SDK] Failed to flush buffer. Will retry later.');
+    }
   }
 }
