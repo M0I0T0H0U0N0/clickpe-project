@@ -86,3 +86,91 @@ This architecture promotes separation of concerns and scalability.
 - **UI Requirements:**  
   - Display current permission status (Granted/Denied).  
   - Show a simple log view of events passed to the SDK (e.g., "Sent SMS #123 to SDK", "Sent Call Log #45 to SDK").
+
+## Installation and Setup
+
+### Prerequisites
+
+- **Flutter SDK** installed ([Flutter installation guide](https://flutter.dev/docs/get-started/install))
+- **Dart SDK** (comes with Flutter)
+- **Python 3.x** installed
+- **Django** and **Django REST Framework** installed (`pip install django djangorestframework`)
+- **Android Emulator** set up via Android Studio
+- **ADB (Android Debug Bridge)** available and added to your system PATH
+- Internet connection for package downloads
+
+---
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/M0I0T0H0U0N0/clickpe-project.git
+cd clickpe-project
+```
+
+---
+### Running the Backend
+
+After completing the setup and migrations, start the Django backend server with the following command:
+
+```bash
+python manage.py runserver
+```
+This will start the backend server locally at:
+http://localhost:8000/drinks
+
+### Running the Flutter App
+
+1. Open a terminal and navigate to the Flutter app directory:
+
+```bash
+cd app
+```
+2. Fetch Flutter dependencies:
+   flutter pub get
+3.Connect your Android emulator or physical device.
+4.Run the Flutter application:
+    flutter run
+
+### Using the Emulator: Adding Test Data
+
+You can add call logs and send SMS messages to your Android emulator using ADB commands.
+
+#### Insert Call Log
+
+```bash
+adb shell content insert --uri content://call_log/calls --bind number:s:'1234567890' --bind type:i:2 --bind duration:i:60 --bind date:l:1721480000000
+```
+### Sending SMS to Emulator via ADB
+
+```bash
+adb emu sms send <sender-number> "<message-text>"
+
+### Usage Flow
+
+1. **Launch the Flutter App**  
+   On startup, the app requests permissions to read SMS and call logs.
+
+2. **Grant Permissions**  
+   The user grants the required permissions via the permission prompt.
+
+3. **Read Existing Data**  
+   Once permissions are granted, the app reads existing SMS messages and call logs from the device.
+
+4. **Initialize SDK**  
+   The app initializes the custom Dart SDK with the backend API endpoint.
+
+5. **Send Events to SDK**  
+   For each SMS and call log event, the app passes data to the SDK for processing.
+
+6. **SDK Processing**  
+   - The SDK inspects each SMS message:
+     - If it contains transactional keywords (e.g., "OTP", "transaction"), it sends the SMS immediately to the backend.
+     - Non-transactional SMS and call logs are buffered.
+   - Once the buffer reaches 50 events, the SDK batches and sends them to the backend.
+
+7. **Backend Receives Data**  
+   The backend API endpoint (`POST /v1/events`) receives and logs incoming events.
+
+8. **User Interface Updates**  
+   The Flutter app displays the current permission status and logs actions as events are sent to the SDK.
