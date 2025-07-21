@@ -151,7 +151,7 @@ adb shell content insert --uri content://call_log/calls --bind number:s:'1234567
 
 ```bash
 adb emu sms send <sender-number> "<message-text>"
-
+```
 ### Usage Flow
 
 1. **Launch the Flutter App**  
