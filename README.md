@@ -127,10 +127,16 @@ http://localhost:8000/drinks
 cd app
 ```
 2. Fetch Flutter dependencies:
-   flutter pub get
-3.Connect your Android emulator or physical device.
-4.Run the Flutter application:
-    flutter run
+   
+```bash
+flutter pub get
+```
+3. Connect your Android emulator or physical device.
+4. Run the Flutter application:
+```bash
+flutter run
+```
+    
 
 ### Using the Emulator: Adding Test Data
 
